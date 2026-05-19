@@ -1,0 +1,251 @@
+import DataTableImport from "react-data-table-component"
+import type { TableColumn } from "react-data-table-component"
+
+const DataTable =
+  (DataTableImport as any).default?.default ||
+  (DataTableImport as any).default ||
+  DataTableImport
+
+type OrnalRow = {
+  fv_ornal: string
+  "Stock Awal": number
+  "Total Stock"?: number
+  "Sales (pcs)": number
+  "Sales (Rp)": number
+  "Kontribusi Sales"?: number
+  "Sales Thru"?: number
+  "Stock Akhir": number
+  "Kontribusi Stock"?: number
+  "Jumlah Artikel": number
+  "Price Point OU"?: number
+}
+
+type Props = {
+  title: string
+  data: OrnalRow[]
+  isOU?: boolean
+}
+
+const numberFormat = (value: number = 0) =>
+  new Intl.NumberFormat("id-ID").format(value)
+
+export default function OrnalTable({
+  title,
+  data,
+  isOU = false,
+}: Props) {
+  const normalColumns: TableColumn<OrnalRow>[] = [
+    {
+      name: "Obral/Normal",
+      selector: (row) => row.fv_ornal,
+      sortable: true,
+    },
+    {
+      name: "Stok Awal",
+      selector: (row) => row["Stock Awal"] || 0,
+      format: (row) =>
+        numberFormat(row["Stock Awal"]),
+      right: true,
+    },
+    {
+      name: "Total Stok",
+      selector: (row) => row["Total Stock"] || 0,
+      format: (row) =>
+        numberFormat(row["Total Stock"] || 0),
+      right: true,
+    },
+    {
+      name: "Sales (pcs)",
+      selector: (row) => row["Sales (pcs)"] || 0,
+      format: (row) =>
+        numberFormat(row["Sales (pcs)"]),
+      right: true,
+    },
+    {
+      name: "Sales (Rp)",
+      selector: (row) => row["Sales (Rp)"] || 0,
+      format: (row) =>
+        numberFormat(row["Sales (Rp)"]),
+      right: true,
+    },
+    {
+      name: "Price Point",
+      selector: (row) => {
+        const pcs = row["Sales (pcs)"] || 0
+        const rp = row["Sales (Rp)"] || 0
+
+        return pcs > 0 ? rp / pcs : 0
+      },
+      format: (row) => {
+        const pcs = row["Sales (pcs)"] || 0
+        const rp = row["Sales (Rp)"] || 0
+
+        const pp = pcs > 0 ? rp / pcs : 0
+
+        return numberFormat(pp)
+      },
+      right: true,
+    },
+    {
+      name: "Kontribusi Sales",
+      selector: (row) =>
+        row["Kontribusi Sales"] || 0,
+      format: (row) =>
+        `${Number(
+          row["Kontribusi Sales"] || 0
+        ).toFixed(2)}%`,
+      right: true,
+    },
+    {
+      name: "Sales Thru",
+      selector: (row) => row["Sales Thru"] || 0,
+      right: true,
+    },
+    {
+      name: "Stok Akhir",
+      selector: (row) => row["Stock Akhir"] || 0,
+      format: (row) =>
+        numberFormat(row["Stock Akhir"]),
+      right: true,
+    },
+    {
+      name: "Kontribusi Stok",
+      selector: (row) =>
+        row["Kontribusi Stock"] || 0,
+      format: (row) =>
+        `${Number(
+          row["Kontribusi Stock"] || 0
+        ).toFixed(2)}%`,
+      right: true,
+    },
+    {
+      name: "Jumlah Artikel",
+      selector: (row) =>
+        row["Jumlah Artikel"] || 0,
+      format: (row) =>
+        numberFormat(row["Jumlah Artikel"]),
+      right: true,
+    },
+  ]
+
+  const ouColumns: TableColumn<OrnalRow>[] = [
+    {
+      name: "Obral/Normal",
+      selector: (row) => row.fv_ornal,
+      sortable: true,
+    },
+    {
+      name: "Stok Awal",
+      cell: (row) => (
+        <span
+          className={
+            row["Stock Awal"] < 0
+              ? "text-red-500"
+              : ""
+          }
+        >
+          {numberFormat(row["Stock Awal"])}
+        </span>
+      ),
+      right: true,
+    },
+    {
+      name: "Sales (pcs)",
+      cell: (row) => (
+        <span
+          className={
+            row["Sales (pcs)"] < 0
+              ? "text-red-500"
+              : ""
+          }
+        >
+          {numberFormat(row["Sales (pcs)"])}
+        </span>
+      ),
+      right: true,
+    },
+    {
+      name: "Sales (Rp)",
+      cell: (row) => (
+        <span
+          className={
+            row["Sales (Rp)"] < 0
+              ? "text-red-500"
+              : ""
+          }
+        >
+          {numberFormat(row["Sales (Rp)"])}
+        </span>
+      ),
+      right: true,
+    },
+    {
+      name: "Price Point",
+      cell: (row) => (
+        <span
+          className={
+            (row["Price Point OU"] || 0) < 0
+              ? "text-red-500"
+              : ""
+          }
+        >
+          {numberFormat(
+            row["Price Point OU"] || 0
+          )}
+        </span>
+      ),
+      right: true,
+    },
+    {
+      name: "Stok Akhir",
+      cell: (row) => (
+        <span
+          className={
+            row["Stock Akhir"] < 0
+              ? "text-red-500"
+              : ""
+          }
+        >
+          {numberFormat(row["Stock Akhir"])}
+        </span>
+      ),
+      right: true,
+    },
+    {
+      name: "Jumlah Artikel",
+      cell: (row) => (
+        <span
+          className={
+            row["Jumlah Artikel"] < 0
+              ? "text-red-500"
+              : ""
+          }
+        >
+          {numberFormat(
+            row["Jumlah Artikel"]
+          )}
+        </span>
+      ),
+      right: true,
+    },
+  ]
+  
+  
+  return (
+    <div className="space-y-2">
+      <h2 className="text-lg font-bold">
+        {title}
+      </h2>
+
+      <DataTable
+        columns={isOU ? ouColumns : normalColumns}
+        data={data}
+        pagination
+        responsive
+        striped
+        highlightOnHover
+        dense
+      />
+    </div>
+  )
+}

@@ -83,6 +83,7 @@ export default function StockForm({ tokoOptions }: Props) {
         options={tokoOptions}
         value={selectedToko}
         onChange={setSelectedToko}
+        returnType="value"
       />
 
       <label>Tanggal Stock</label>

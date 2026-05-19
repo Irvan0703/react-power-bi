@@ -11,8 +11,10 @@ type Props = {
 }
 
 export default function BedahCounterForm ({ tokoOptions }: Props) {
-    const [selectedToko, setSelectedToko] = useState<Option[]>([])
+  const [selectedToko, setSelectedToko] = useState<string[]>([])
   const [date, setDate] = useState<Date | null>(new Date())
+  const [salesStartLastYear, setSalesStartLastYear] = useState<Date | null>(new Date())
+  const [salesEndLastYear, setSalesEndLastYear] = useState<Date | null>(new Date())
   const [salesStart, setSalesStart] = useState<Date | null>(new Date())
   const [salesEnd, setSalesEnd] = useState<Date | null>(new Date())
   const navigate = useNavigate();
@@ -29,13 +31,15 @@ export default function BedahCounterForm ({ tokoOptions }: Props) {
 
     const params = new URLSearchParams({
       subid: subid,
-      codeToko: selectedToko.map(t => t.value).join(","),
+      toko: selectedToko.join(","),
       backdate: date?.toISOString().slice(0, 10) || "",
-      sales_start: salesStart?.toISOString().slice(0, 10) || "",
-      sales_end: salesEnd?.toISOString().slice(0, 10) || ""
+      start: salesStart?.toISOString().slice(0, 10) || "",
+      end: salesEnd?.toISOString().slice(0, 10) || "",
+      start_last: salesStartLastYear?.toISOString().slice(0, 10) || "",
+      end_last: salesEndLastYear?.toISOString().slice(0, 10) || ""
     })
 
-    navigate(`/stock?${params.toString()}`)
+    navigate(`/bedah-counter/action?${params.toString()}`)
   }
 
   useEffect(() => {
@@ -47,16 +51,26 @@ export default function BedahCounterForm ({ tokoOptions }: Props) {
 
     return (
         <div className="card p-4">
-          <h3 className="text-center">Form Cek Stok</h3>
+          <h3 className="text-center">Form Bedah Counter</h3>
     
           <MultiSelectField
             options={tokoOptions}
             value={selectedToko}
             onChange={setSelectedToko}
+            returnType="label"
           />
-    
+        
           <label>Tanggal Stock</label>
           <DatePickerField value={date} onChange={setDate} />
+
+          <h5>Periode Tahun Lalu</h5>
+    
+          <label>Sales Start</label>
+          <DatePickerField value={salesStartLastYear} onChange={setSalesStartLastYear} />
+    
+          <label>Sales End</label>
+          <DatePickerField value={salesEndLastYear} onChange={setSalesEndLastYear} />
+          <h5>Periode Tahun ini</h5>
     
           <label>Sales Start</label>
           <DatePickerField value={salesStart} onChange={setSalesStart} />
@@ -64,7 +78,7 @@ export default function BedahCounterForm ({ tokoOptions }: Props) {
           <label>Sales End</label>
           <DatePickerField value={salesEnd} onChange={setSalesEnd} />
     
-          <Button onClick={handleSubmit}>Cek Stok</Button>
+          <Button onClick={handleSubmit}>Bedah Counter</Button>
           </div>
       )
 }
