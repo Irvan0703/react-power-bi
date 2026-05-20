@@ -45,28 +45,28 @@ export default function OrnalTable({
       selector: (row) => row["Stock Awal"] || 0,
       format: (row) =>
         numberFormat(row["Stock Awal"]),
-      right: true,
+      
     },
     {
       name: "Total Stok",
       selector: (row) => row["Total Stock"] || 0,
       format: (row) =>
         numberFormat(row["Total Stock"] || 0),
-      right: true,
+      
     },
     {
       name: "Sales (pcs)",
       selector: (row) => row["Sales (pcs)"] || 0,
       format: (row) =>
         numberFormat(row["Sales (pcs)"]),
-      right: true,
+      
     },
     {
       name: "Sales (Rp)",
       selector: (row) => row["Sales (Rp)"] || 0,
       format: (row) =>
         numberFormat(row["Sales (Rp)"]),
-      right: true,
+      
     },
     {
       name: "Price Point",
@@ -84,7 +84,7 @@ export default function OrnalTable({
 
         return numberFormat(pp)
       },
-      right: true,
+      
     },
     {
       name: "Kontribusi Sales",
@@ -94,19 +94,19 @@ export default function OrnalTable({
         `${Number(
           row["Kontribusi Sales"] || 0
         ).toFixed(2)}%`,
-      right: true,
+      
     },
     {
       name: "Sales Thru",
       selector: (row) => row["Sales Thru"] || 0,
-      right: true,
+      
     },
     {
       name: "Stok Akhir",
       selector: (row) => row["Stock Akhir"] || 0,
       format: (row) =>
         numberFormat(row["Stock Akhir"]),
-      right: true,
+      
     },
     {
       name: "Kontribusi Stok",
@@ -116,7 +116,7 @@ export default function OrnalTable({
         `${Number(
           row["Kontribusi Stock"] || 0
         ).toFixed(2)}%`,
-      right: true,
+      
     },
     {
       name: "Jumlah Artikel",
@@ -124,7 +124,7 @@ export default function OrnalTable({
         row["Jumlah Artikel"] || 0,
       format: (row) =>
         numberFormat(row["Jumlah Artikel"]),
-      right: true,
+      
     },
   ]
 
@@ -147,7 +147,7 @@ export default function OrnalTable({
           {numberFormat(row["Stock Awal"])}
         </span>
       ),
-      right: true,
+      
     },
     {
       name: "Sales (pcs)",
@@ -162,7 +162,7 @@ export default function OrnalTable({
           {numberFormat(row["Sales (pcs)"])}
         </span>
       ),
-      right: true,
+      
     },
     {
       name: "Sales (Rp)",
@@ -177,7 +177,7 @@ export default function OrnalTable({
           {numberFormat(row["Sales (Rp)"])}
         </span>
       ),
-      right: true,
+      
     },
     {
       name: "Price Point",
@@ -194,7 +194,7 @@ export default function OrnalTable({
           )}
         </span>
       ),
-      right: true,
+      
     },
     {
       name: "Stok Akhir",
@@ -209,7 +209,7 @@ export default function OrnalTable({
           {numberFormat(row["Stock Akhir"])}
         </span>
       ),
-      right: true,
+      
     },
     {
       name: "Jumlah Artikel",
@@ -226,7 +226,7 @@ export default function OrnalTable({
           )}
         </span>
       ),
-      right: true,
+      
     },
   ]
   

@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react"
-import { fetchCategory, fetchOrnal } from "../api/bedah_counter"
+import { fetchCategory, fetchHistory, fetchOrnal, fetchSales } from "../api/bedah_counter"
 import OrnalTable from "../components/organisms/OrnalTable"
 import CategoryTable from "../components/organisms/CategoryTable"
 import Navbar from "../components/organisms/NavBar"
 import { useSearchParams } from "react-router-dom"
+import SalesTable from "../components/organisms/SalesTable"
+import HistoryTable from "../components/organisms/HistoryTable"
 
 export default function BedahCounterPage() {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -17,6 +19,9 @@ export default function BedahCounterPage() {
     const [categoryOU, setCategoryOU] = useState([])
     const [selectedOrnal, setSelectedOrnal] = useState("")
     const [selectedDivisi, setSelectedDivisi] = useState("")
+    const [selectedToko, setSelectedToko] = useState("")
+    const [sales, setSales] = useState([])
+    const [history, setHistory] = useState([])
 
     useEffect(() => {
         loadData()
@@ -56,37 +61,78 @@ export default function BedahCounterPage() {
             const end = searchParams.get("end") || ""
             const start = searchParams.get("start") || ""
             const backdate = searchParams.get("backdate") || ""
+
+            setSelectedToko(tokoFull)
             
             const res = await fetchOrnal({
                 toko,
                 divisi: selectedDivisi,
                 ornal: selectedOrnal,
-                end: "2026-02-14",
+                start,
+                end,
+                backdate,
             })
+            const safeJson = res.replace(
+            /:\s*NaN/g,
+            ": 0"
+            )
 
-            setOrnal2024(res.last_year || [])
-            setOrnal2025(res.this_year || [])
-            setOrnalOU(res.ou || [])
+            const parsed = JSON.parse(safeJson)
+            setOrnal2024(parsed.last_year || [])
+            setOrnal2025(parsed.this_year || [])
+            setOrnalOU(parsed.ou || [])
 
             const resCat = await fetchCategory({
                 toko,
-                end: "2026-02-14",
+                start,
+                end,
+                divisi: selectedDivisi,
+                ornal: selectedOrnal,
+                backdate,
             })
 
-            setCategory2024(resCat.last_year || [])
-            setCategory2025(resCat.this_year || [])
-            setCategoryOU(resCat.ou || [])
+            const safeJsonCat = resCat.replace(
+            /:\s*NaN/g,
+            ": 0"
+            )
+
+            const parsedCat = JSON.parse(safeJsonCat)
+            setCategory2024(parsedCat.last_year || [])
+            setCategory2025(parsedCat.this_year || [])
+            setCategoryOU(parsedCat.ou || [])
+
+            const resSales = await fetchSales({
+                toko,
+                start,
+                end,
+                divisi: selectedDivisi,
+                ornal: selectedOrnal,
+                backdate,
+            })
+            setSales(resSales)
+
+            const resHist = await fetchHistory({
+                toko,
+                start,
+                end,
+                divisi: selectedDivisi,
+                ornal: selectedOrnal,
+                backdate,
+            })
+
+            setHistory(resHist)
         } catch (err) {
             console.error(err)
         } finally {
             setLoading(false)
         }
     }
+    
     return(
         <div className="space-y-6 p-4">
             
             <Navbar
-            judulToko="MD255 - MALANG"
+            judulToko={selectedToko}
             divisi={selectedDivisi}
             ornal={selectedOrnal}
             selectedOrnal={selectedOrnal}
@@ -100,6 +146,7 @@ export default function BedahCounterPage() {
                 <div>Loading...</div>
             ) : (
                 <>
+                <SalesTable data={sales} />
                 <OrnalTable
                     title="Tahun Lalu"
                     data={ornal2024}
@@ -132,6 +179,10 @@ export default function BedahCounterPage() {
                     isOU
                     />
                 </div>
+                <HistoryTable
+                title="History"
+                data={history}
+                />
                 </>
             )}
             </div>

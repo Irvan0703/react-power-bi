@@ -50,3 +50,9 @@ export const fetchCategory = async (params = {}) => {
     ...params
   })
 }
+
+export const fetchHistory = async (params = {}) => {
+  return fetchBedahCounter("summary_hist", {
+    ...params
+  })
+}

@@ -46,28 +46,28 @@ export default function CategoryTable({
       selector: (row) => row["Stock Awal"] || 0,
       format: (row) =>
         numberFormat(row["Stock Awal"]),
-      right: true,
+      
     },
     {
       name: "Total Stok",
       selector: (row) => row["Total Stock"] || 0,
       format: (row) =>
         numberFormat(row["Total Stock"] || 0),
-      right: true,
+      
     },
     {
       name: "Sales (pcs)",
       selector: (row) => row["Sales (pcs)"] || 0,
       format: (row) =>
         numberFormat(row["Sales (pcs)"]),
-      right: true,
+      
     },
     {
       name: "Sales (Rp)",
       selector: (row) => row["Sales (Rp)"] || 0,
       format: (row) =>
         numberFormat(row["Sales (Rp)"]),
-      right: true,
+      
     },
     {
       name: "Price Point",
@@ -85,7 +85,7 @@ export default function CategoryTable({
 
         return numberFormat(pp)
       },
-      right: true,
+      
     },
     {
       name: "Kontribusi Sales",
@@ -95,7 +95,7 @@ export default function CategoryTable({
         `${Number(
           row["Kontribusi Sales"] || 0
         ).toFixed(2)}%`,
-      right: true,
+      
     },
     {
       name: "Sales Thru",
@@ -104,14 +104,14 @@ export default function CategoryTable({
         Number(
           row["Sales Thru"] || 0
         ).toFixed(2),
-      right: true,
+      
     },
     {
       name: "Stok Akhir",
       selector: (row) => row["Stock Akhir"] || 0,
       format: (row) =>
         numberFormat(row["Stock Akhir"]),
-      right: true,
+      
     },
     {
       name: "Kontribusi Stok",
@@ -121,7 +121,7 @@ export default function CategoryTable({
         `${Number(
           row["Kontribusi Stock"] || 0
         ).toFixed(2)}%`,
-      right: true,
+      
     },
     {
       name: "Jumlah Artikel",
@@ -129,7 +129,7 @@ export default function CategoryTable({
         row["Jumlah Artikel"] || 0,
       format: (row) =>
         numberFormat(row["Jumlah Artikel"]),
-      right: true,
+      
     },
   ]
 
@@ -153,7 +153,7 @@ export default function CategoryTable({
           {numberFormat(row["Stock Awal"])}
         </span>
       ),
-      right: true,
+      
     },
     {
       name: "Sales (pcs)",
@@ -168,7 +168,7 @@ export default function CategoryTable({
           {numberFormat(row["Sales (pcs)"])}
         </span>
       ),
-      right: true,
+      
     },
     {
       name: "Sales (Rp)",
@@ -183,7 +183,7 @@ export default function CategoryTable({
           {numberFormat(row["Sales (Rp)"])}
         </span>
       ),
-      right: true,
+      
     },
     {
       name: "Price Point",
@@ -200,7 +200,7 @@ export default function CategoryTable({
           )}
         </span>
       ),
-      right: true,
+      
     },
     {
       name: "Stok Akhir",
@@ -215,7 +215,7 @@ export default function CategoryTable({
           {numberFormat(row["Stock Akhir"])}
         </span>
       ),
-      right: true,
+      
     },
     {
       name: "Jumlah Artikel",
@@ -232,7 +232,7 @@ export default function CategoryTable({
           )}
         </span>
       ),
-      right: true,
+      
     },
   ]
 

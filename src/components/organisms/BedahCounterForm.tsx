@@ -42,12 +42,59 @@ export default function BedahCounterForm ({ tokoOptions }: Props) {
     navigate(`/bedah-counter/action?${params.toString()}`)
   }
 
-  useEffect(() => {
+    useEffect(() => {
       if (!subid) {
           window.location.href = "/login"
           return
       }
-      }, [])
+
+      const today = new Date()
+
+      // =========================
+      // Tahun ini
+      // =========================
+
+      // akhir = hari ini
+      const thisYearEnd = new Date(today)
+
+      // awal = hari ini - 3 bulan
+      const thisYearStart = new Date(today)
+      thisYearStart.setMonth(
+        thisYearStart.getMonth() - 3
+      )
+
+      setSalesStart(thisYearStart)
+      setSalesEnd(thisYearEnd)
+
+      // =========================
+      // Tahun lalu
+      // =========================
+
+      // awal tahun lalu = tanggal awal tahun ini -1 tahun
+      const lastYearStart = new Date(
+        thisYearEnd
+      )
+      lastYearStart.setFullYear(
+        lastYearStart.getFullYear() - 1
+      )
+
+      // akhir tahun lalu = tanggal akhir tahun ini -1 tahun
+      const lastYearEnd = new Date(
+        thisYearEnd
+      )
+      lastYearEnd.setFullYear(
+        lastYearEnd.getFullYear() - 1
+      )
+      lastYearEnd.setMonth(
+        lastYearEnd.getMonth() + 3
+      )
+
+      setSalesStartLastYear(lastYearStart)
+      setSalesEndLastYear(lastYearEnd)
+
+      // backdate
+      setDate(today)
+    }, [])
 
     return (
         <div className="card p-4">
@@ -65,17 +112,17 @@ export default function BedahCounterForm ({ tokoOptions }: Props) {
 
           <h5>Periode Tahun Lalu</h5>
     
-          <label>Sales Start</label>
+          <label>Tanggal Awal</label>
           <DatePickerField value={salesStartLastYear} onChange={setSalesStartLastYear} />
     
-          <label>Sales End</label>
+          <label>Tanggal Akhir</label>
           <DatePickerField value={salesEndLastYear} onChange={setSalesEndLastYear} />
           <h5>Periode Tahun ini</h5>
     
-          <label>Sales Start</label>
+          <label>Tanggal Awal</label>
           <DatePickerField value={salesStart} onChange={setSalesStart} />
     
-          <label>Sales End</label>
+          <label>Tanggal Akhir</label>
           <DatePickerField value={salesEnd} onChange={setSalesEnd} />
     
           <Button onClick={handleSubmit}>Bedah Counter</Button>
