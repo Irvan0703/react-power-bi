@@ -41,6 +41,8 @@ type HistoryRow = {
 type Props = {
   title?: string
   data: HistoryRow[]
+  selectedRow: HistoryRow | null
+  onSelectRow: (row: HistoryRow) => void
 }
 
 const toNumber = (
@@ -68,18 +70,23 @@ const percentFormat = (
 export default function HistoryTable({
   title,
   data,
+  selectedRow,
+  onSelectRow,
 }: Props) {
   const columns: TableColumn<HistoryRow>[] = [
     {
+      id: "select",
       name: "",
-      width: "70px",
       cell: (row) => (
         <input
           type="checkbox"
-          data-category={row.fv_catname}
+          checked={
+            selectedRow?.fv_catname === row.fv_catname
+          }
+          onChange={() => onSelectRow(row)}
         />
       ),
-      
+      width: "70px",
     },
 
     {

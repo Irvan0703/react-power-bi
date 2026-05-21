@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react"
-import { fetchCategory, fetchHistory, fetchOrnal, fetchSales } from "../api/bedah_counter"
+import { fetchCategory, fetchHistory, fetchOrnal, fetchSales, fetchStokBedahCounter } from "../api/bedah_counter"
 import OrnalTable from "../components/organisms/OrnalTable"
 import CategoryTable from "../components/organisms/CategoryTable"
 import Navbar from "../components/organisms/NavBar"
 import { useSearchParams } from "react-router-dom"
 import SalesTable from "../components/organisms/SalesTable"
 import HistoryTable from "../components/organisms/HistoryTable"
+import StokTableBedahCounter from "../components/organisms/StokTableBedahCounter"
+import ArtikelFilterGroup from "../components/organisms/ArtikelFilterGroup"
+import Button from "../components/atoms/Button"
 
 export default function BedahCounterPage() {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -22,10 +25,21 @@ export default function BedahCounterPage() {
     const [selectedToko, setSelectedToko] = useState("")
     const [sales, setSales] = useState([])
     const [history, setHistory] = useState([])
+    const [selectedHistory, setSelectedHistory] = useState<any | null>(null)
+    const [stok, setStok] = useState([])
+    const [category, setCategory] = useState<Option | null>(null)
+    const [mark, setMark] = useState<Option | null>(null)
+    const [artikel, setArtikel] = useState<Option | null>(null)
 
     useEffect(() => {
         loadData()
-    }, [])
+        if (selectedHistory?.fv_catname) {
+            setCategory({
+            label: selectedHistory.fv_catname,
+            value: selectedHistory.fv_catname,
+            })
+        }
+    }, [selectedHistory])
 
     const loadData = async () => {
         try {
@@ -127,6 +141,54 @@ export default function BedahCounterPage() {
             setLoading(false)
         }
     }
+
+    const handleSelectHistory = async (row: any) => {
+        // VALIDASI wajib pilih divisi + ornal
+        if (!selectedDivisi || !selectedOrnal) {
+            alert("Silakan pilih Divisi dan Obral / Normal terlebih dahulu")
+            return
+        }
+        
+        // uncheck jika row sama diklik lagi
+        if (selectedHistory?.fv_catname === row.fv_catname) {
+            setSelectedHistory(null)
+            setStok([])
+            return
+        }
+
+        setSelectedHistory(row)
+
+        try {
+            setLoading(true)
+
+            const tokoFull = searchParams.get("toko") || ""
+            const toko = tokoFull.split(" - ")[0]
+
+            const start = searchParams.get("start") || ""
+            const end = searchParams.get("end") || ""
+            const backdate = searchParams.get("backdate") || ""
+
+            const resStok = await fetchStokBedahCounter({
+                toko,
+                start,
+                end,
+                divisi: selectedDivisi,
+                ornal: selectedOrnal,
+                backdate,
+                cat: row.fv_catname,
+            })
+
+            setStok(resStok || [])
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleMutasiIn = () => {
+        console.log('mutasi in')
+    }
     
     return(
         <div className="space-y-6 p-4">
@@ -182,7 +244,41 @@ export default function BedahCounterPage() {
                 <HistoryTable
                 title="History"
                 data={history}
+                selectedRow={selectedHistory}
+                onSelectRow={handleSelectHistory}
                 />
+
+                {selectedHistory && (
+                    <div>
+                        <div className="flex items-end gap-3">
+                            <ArtikelFilterGroup
+                                subid="10"
+
+                                showCategory={false}
+                                showMark={false}
+
+                                category={null}
+                                mark={null}
+                                artikel={artikel}
+
+                                onChangeCategory={() => {}}
+                                onChangeMark={() => {}}
+                                onChangeArtikel={setArtikel}
+                            />
+                            <Button onClick={handleMutasiIn}>Mutasi In</Button>
+                            <Button variant="danger" onClick={handleMutasiIn}>Order Booking</Button>
+                        </div>
+                        
+                        <StokTableBedahCounter
+                            data={stok}
+                            loading={loading}
+                            onRetur={(row) => console.log(row)}
+                            onMutasiIn={(row) => console.log(row)}
+                            onMutasiOut={(row) => console.log(row)}
+                            onOrderBooking={(row) => console.log(row)}
+                        />
+                    </div>
+                )}
                 </>
             )}
             </div>

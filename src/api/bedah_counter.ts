@@ -56,3 +56,10 @@ export const fetchHistory = async (params = {}) => {
     ...params
   })
 }
+
+export const fetchStokBedahCounter = async (params = {}) => {
+  return fetchBedahCounter("freestock_art", {
+    core: "a.fv_artsizecode",
+    ...params
+  })
+}
