@@ -9,6 +9,9 @@ import HistoryTable from "../components/organisms/HistoryTable"
 import StokTableBedahCounter from "../components/organisms/StokTableBedahCounter"
 import ArtikelFilterGroup from "../components/organisms/ArtikelFilterGroup"
 import Button from "../components/atoms/Button"
+import ReturModal from "../components/organisms/ReturModal"
+import { fetchMutasi } from "../api/retur_mutasi"
+import MutasiModal from "../components/organisms/MutasiModal"
 
 export default function BedahCounterPage() {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -30,6 +33,18 @@ export default function BedahCounterPage() {
     const [category, setCategory] = useState<Option | null>(null)
     const [mark, setMark] = useState<Option | null>(null)
     const [artikel, setArtikel] = useState<Option | null>(null)
+    const [openRetur, setOpenRetur] = useState(false)
+    const [selectedRow, setSelectedRow] = useState<any>(null)
+    const [openMutasiIn, setOpenMutasiIn] = useState(false)
+    const [selectedMutasiRow, setSelectedMutasiRow] = useState<any>(null)
+    const [draftMutasiIn, setDraftMutasiIn] = useState<any[]>([])
+    const tokoFull  = searchParams.get("toko") || ""
+    const toko = tokoFull.split(" - ")[0]
+    const end = searchParams.get("end") || ""
+    const start = searchParams.get("start") || ""
+    const backdate = searchParams.get("backdate") || ""
+    const subid = searchParams.get("subid") || "10"
+    const [mutasiType, setMutasiType] = useState<"in" | "out">("in")
 
     useEffect(() => {
         loadData()
@@ -70,12 +85,6 @@ export default function BedahCounterPage() {
             // update url tanpa hilangkan query lama
             setSearchParams(newParams)
 
-            const tokoFull  = searchParams.get("toko") || ""
-            const toko = tokoFull.split(" - ")[0]
-            const end = searchParams.get("end") || ""
-            const start = searchParams.get("start") || ""
-            const backdate = searchParams.get("backdate") || ""
-
             setSelectedToko(tokoFull)
             
             const res = await fetchOrnal({
@@ -85,6 +94,7 @@ export default function BedahCounterPage() {
                 start,
                 end,
                 backdate,
+                subid,
             })
             const safeJson = res.replace(
             /:\s*NaN/g,
@@ -103,6 +113,7 @@ export default function BedahCounterPage() {
                 divisi: selectedDivisi,
                 ornal: selectedOrnal,
                 backdate,
+                subid,
             })
 
             const safeJsonCat = resCat.replace(
@@ -122,6 +133,7 @@ export default function BedahCounterPage() {
                 divisi: selectedDivisi,
                 ornal: selectedOrnal,
                 backdate,
+                subid,
             })
             setSales(resSales)
 
@@ -132,6 +144,7 @@ export default function BedahCounterPage() {
                 divisi: selectedDivisi,
                 ornal: selectedOrnal,
                 backdate,
+                subid,
             })
 
             setHistory(resHist)
@@ -161,13 +174,6 @@ export default function BedahCounterPage() {
         try {
             setLoading(true)
 
-            const tokoFull = searchParams.get("toko") || ""
-            const toko = tokoFull.split(" - ")[0]
-
-            const start = searchParams.get("start") || ""
-            const end = searchParams.get("end") || ""
-            const backdate = searchParams.get("backdate") || ""
-
             const resStok = await fetchStokBedahCounter({
                 toko,
                 start,
@@ -176,6 +182,7 @@ export default function BedahCounterPage() {
                 ornal: selectedOrnal,
                 backdate,
                 cat: row.fv_catname,
+                subid,
             })
 
             setStok(resStok || [])
@@ -186,8 +193,77 @@ export default function BedahCounterPage() {
         }
     }
 
-    const handleMutasiIn = () => {
+    const handleMutasiIn = async() => {
         console.log('mutasi in')
+        setSelectedMutasiRow(null)
+        const payload: any = {
+            artikel: artikel?.value || "",
+            toko,
+            divisi: selectedDivisi,
+            ornal: selectedOrnal,
+            start,
+            end,
+            backdate,
+            subid,
+            show : "main"
+        }
+
+        const res = await fetchMutasi(
+            payload
+        )
+
+        setDraftMutasiIn(
+            res.data || []
+        )
+        setOpenMutasiIn(true)
+    }
+
+    const handleRetur = (row: any) => {
+        setSelectedRow(row)
+        setOpenRetur(true)
+    }
+
+    const handleMutasi = async (
+    row: any,
+    type: "in" | "out"
+    ) => {
+        try {
+            setLoading(true)
+
+            setSelectedMutasiRow(row)
+            setMutasiType(type)
+            console.log(row)
+
+            const payload: any = {
+                artikel: row.fv_barcode,
+                toko,
+                divisi: selectedDivisi,
+                ornal: selectedOrnal,
+                start,
+                end,
+                backdate,
+                subid,
+            }
+
+            // hanya kirim show kalau ada
+            if (type === "in") {
+                payload.show = "main"
+            }
+
+            const res = await fetchMutasi(
+                payload
+            )
+
+            setDraftMutasiIn(
+                res.data || []
+            )
+
+            setOpenMutasiIn(true)
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setLoading(false)
+        }
     }
     
     return(
@@ -272,10 +348,38 @@ export default function BedahCounterPage() {
                         <StokTableBedahCounter
                             data={stok}
                             loading={loading}
-                            onRetur={(row) => console.log(row)}
-                            onMutasiIn={(row) => console.log(row)}
-                            onMutasiOut={(row) => console.log(row)}
+                            onRetur={handleRetur}
+                            onMutasiIn={(row) =>
+                                handleMutasi(row, "in")
+                            }
+                            onMutasiOut={(row) => 
+                                handleMutasi(row,"out")
+                            }
                             onOrderBooking={(row) => console.log(row)}
+                        />
+
+                        <ReturModal
+                        open={openRetur}
+                        row={selectedRow}
+                        onClose={() => setOpenRetur(false)}
+                        onConfirm={(payload) => {
+                            console.log(payload)
+
+                            setOpenRetur(false)
+                        }}
+                        />
+
+                        <MutasiModal
+                        type={mutasiType}
+                        open={openMutasiIn}
+                        onClose={() =>
+                            setOpenMutasiIn(false)
+                        }
+                        selectedRow={selectedMutasiRow}
+                        draftData={draftMutasiIn}
+                        onConfirm={() => {
+                            console.log("confirm")
+                        }}
                         />
                     </div>
                 )}
