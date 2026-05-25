@@ -37,3 +37,9 @@ export const getListArtikel = async (params = {}) => {
         ...params
     })
 }
+
+export const fetcDetailArtikel = async(params : {}) => {
+    return fetchBedahArtikel("supp_ob_art", {
+        ...params
+    })
+}

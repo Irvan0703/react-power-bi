@@ -10,8 +10,13 @@ import StokTableBedahCounter from "../components/organisms/StokTableBedahCounter
 import ArtikelFilterGroup from "../components/organisms/ArtikelFilterGroup"
 import Button from "../components/atoms/Button"
 import ReturModal from "../components/organisms/ReturModal"
-import { fetchMutasi } from "../api/retur_mutasi"
+import { fetchGudang, fetchMutasi } from "../api/retur_mutasi"
 import MutasiModal from "../components/organisms/MutasiModal"
+import OrderBookingModal from "../components/organisms/OrderBookingModal"
+import { fetcDetailArtikel } from "../api/bedah_artikel"
+import DetailTable from "../components/organisms/DetailTableArtikel"
+import RasioCard from "../components/organisms/RasioCard"
+import GudangTable from "../components/organisms/GudangTable"
 
 export default function BedahCounterPage() {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -45,6 +50,46 @@ export default function BedahCounterPage() {
     const backdate = searchParams.get("backdate") || ""
     const subid = searchParams.get("subid") || "10"
     const [mutasiType, setMutasiType] = useState<"in" | "out">("in")
+    const [openOrderBooking, setOpenOrderBooking] = useState(false)
+    const [selectedOrderRow, setSelectedOrderRow] = useState<any>(null)
+    const [orderBookingDetail,setOrderBookingDetail] = useState<any[]>([])
+    const [rasioData,setRasioData] = useState<any>({})
+    const [gudangHtml,setGudangHtml] = useState("")
+    const [selectedGudangRows,setSelectedGudangRows] = useState<number[]>([])
+    const [gudangData, setGudangData] = useState<any[]>([])
+
+    const topSizes = [
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+    ]
+
+    const bottomSizes = [
+        "27",
+        "28",
+        "29",
+        "30",
+        "31",
+        "32",
+        "33",
+        "34",
+        "36",
+        "38",
+        "40",
+        "42",
+    ]
+
+    const allSizes = [
+        "25","26","27","28","29",
+        "30","31","32","33","34",
+        "35","36","37","38","39",
+        "40","42","44",
+        "ALLSIZE",
+        "FS","XS","SS","S","M",
+        "L","XL","XXL","XXXL",
+    ]
 
     useEffect(() => {
         loadData()
@@ -54,7 +99,25 @@ export default function BedahCounterPage() {
             value: selectedHistory.fv_catname,
             })
         }
+        
     }, [selectedHistory])
+
+    useEffect(() => {
+
+        if (selectedGudangRows.length === 0) {
+            setRasioData(null)
+            return
+        }
+
+        const firstIndex =
+            selectedGudangRows[0]
+
+        const selectedGudang =
+            gudangData[firstIndex]
+
+        generateRasio(selectedGudang)
+
+    }, [selectedGudangRows, gudangData])
 
     const loadData = async () => {
         try {
@@ -232,7 +295,7 @@ export default function BedahCounterPage() {
 
             setSelectedMutasiRow(row)
             setMutasiType(type)
-            console.log(row)
+            
 
             const payload: any = {
                 artikel: row.fv_barcode,
@@ -264,6 +327,113 @@ export default function BedahCounterPage() {
         } finally {
             setLoading(false)
         }
+    }
+
+    const handleOrderBooking = async(row: any) => {
+        try {
+            setLoading(true)
+            setSelectedOrderRow(row)
+            setOpenOrderBooking(true)
+
+            setOrderBookingDetail([])
+            setRasioData({})
+            setGudangHtml("")
+
+            //Detail Artikel di toko
+            const res = await fetcDetailArtikel({
+                artikel: row.fv_barcode,
+                toko,
+                divisi: selectedDivisi,
+                ornal: selectedOrnal,
+                start,
+                end,
+                backdate,
+                subid,
+                topbot: row.fv_configname,
+            })
+
+            if (row.fv_configname === 'TOP') {
+                setOrderBookingDetail( res.top || [])
+            } else {
+                setOrderBookingDetail( res.bot || [])
+            }
+            
+            //Stok di Gudang
+            const resGudang = await fetchGudang({
+                artikel: row.fv_barcode,
+                subid,
+            })
+
+            setGudangData(resGudang || [])
+        } catch (error) {
+            console.error(error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const toggleGudangRow = (
+        index: number
+    ) => {
+        setSelectedGudangRows(
+            (prev) => {
+
+            if (
+                prev.includes(index)
+            ) {
+                return prev.filter(
+                (i) => i !== index
+                )
+            }
+
+            return [...prev, index]
+            }
+    )}
+
+    const generateRasio = (
+        gudangRow: any
+    ) => {
+
+        if (!gudangRow) {
+            setRasioData(null)
+            return
+        }
+
+        const tipeSize = (
+            gudangRow.fv_configname || ""
+        ).toUpperCase()
+
+        let sizes: string[] = []
+
+        if (tipeSize === "TOP") {
+            sizes = topSizes
+        } else {
+            sizes = bottomSizes
+        }
+
+        const result: any = {
+            artikel: gudangRow.fv_barcode,
+            gudang: gudangRow.fv_whtypename,
+            tipeSize,
+            items: [],
+        }
+
+        sizes.forEach((size) => {
+
+            const stok = Number(
+                gudangRow[size] || 0
+            )
+
+            result.items.push({
+                size,
+                stok,
+                value: stok === 0 ? "-" : 0,
+                disabled: stok === 0,
+                max: stok,
+            })
+        })
+
+        setRasioData(result)
     }
     
     return(
@@ -355,7 +525,9 @@ export default function BedahCounterPage() {
                             onMutasiOut={(row) => 
                                 handleMutasi(row,"out")
                             }
-                            onOrderBooking={(row) => console.log(row)}
+                            onOrderBooking={(row) => 
+                                handleOrderBooking(row)
+                            }
                         />
 
                         <ReturModal
@@ -381,6 +553,69 @@ export default function BedahCounterPage() {
                             console.log("confirm")
                         }}
                         />
+
+                        <OrderBookingModal
+                            open={openOrderBooking}
+                            onClose={() => {
+                                setOpenOrderBooking(false)
+                                setSelectedGudangRows([])
+                                setSelectedOrderRow(null)
+                                setOrderBookingDetail([])
+                                setGudangData([])
+                                setRasioData(null)
+                            }}
+                            artikel={selectedOrderRow?.fv_barcode}
+                            toko={selectedOrderRow?.fv_toko}
+                            gudang={selectedOrderRow?.gudang}
+                            onSaveDraft={() => {
+                                console.log("save draft")
+                            }}
+                            >
+                                <div className="space-y-6">
+
+                                    {/* DETAIL TOKO */}
+                                    <div>
+                                    <h2 className="mb-3 text-lg font-bold">
+                                        Detail Toko
+                                    </h2>
+
+                                    <DetailTable
+                                        rows={
+                                        orderBookingDetail
+                                        }
+                                    />
+                                    </div>
+
+                                    {/* RASIO */}
+                                    <div>
+                                    <h2 className="mb-3 text-lg font-bold">
+                                        Rasio
+                                    </h2>
+
+                                    <RasioCard
+                                        data={rasioData}
+                                    />
+                                    </div>
+
+                                    {/* GUDANG */}
+                                    {gudangHtml && (
+                                    <div
+                                        dangerouslySetInnerHTML={{
+                                        __html: gudangHtml,
+                                        }}
+                                    />
+                                    )}
+                                    <GudangTable
+                                    data={gudangData}
+                                    selectedRows={
+                                        selectedGudangRows
+                                    }
+                                    onToggleRow={
+                                        toggleGudangRow
+                                    }
+                                    />
+                                </div>
+                        </OrderBookingModal>
                     </div>
                 )}
                 </>

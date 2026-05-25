@@ -37,3 +37,36 @@ export const fetchMutasi = async (params : {}) => {
         ...params
     })
 }
+
+export const fetchGudang = async (params: {}) => {
+    return fetchReturMutasi("stock_wh", {
+        add: "po",
+        ...params
+    })
+}
+
+const postReturMutasi = async (
+  type: string,
+  params: any = {}
+) => {
+  const date = params.backdate || getToday()
+
+  // 🔥 buang backdate dari query (karena sudah di URL)
+  const { backdate, ...rest } = params
+
+  const payload = {
+    ...(type && { type }),
+    ...rest,
+  }
+
+  const res = await axios.post(
+    `${BASE_URL}/returMutasi/${date}`,
+    payload
+  )
+
+  return res.data // ⬅️ ini langsung array
+}
+
+export const postSessionOrder = async (params : {}) => {
+    return postReturMutasi("session", params)
+}
