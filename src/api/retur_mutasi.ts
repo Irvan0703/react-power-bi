@@ -45,6 +45,12 @@ export const fetchGudang = async (params: {}) => {
     })
 }
 
+export const fetchDraftOB = async (params: {}) => {
+  return fetchReturMutasi("draft_ob", {
+    ...params
+  })
+}
+
 const postReturMutasi = async (
   type: string,
   params: any = {}
@@ -69,4 +75,8 @@ const postReturMutasi = async (
 
 export const postSessionOrder = async (params : {}) => {
     return postReturMutasi("session", params)
+}
+
+export const postDraft = async (params: {}) => {
+  return postReturMutasi("draft_mutasi_in", params)
 }

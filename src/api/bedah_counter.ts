@@ -63,3 +63,37 @@ export const fetchStokBedahCounter = async (params = {}) => {
     ...params
   })
 }
+
+export const fetchDraft = async (params: {}) => {
+  return fetchBedahCounter("draft_pending", {
+    ...params
+  })
+}
+
+const deleteBedahCounter = async (
+  type: string,
+  params: any = {}
+) => {
+  const date = params.backdate || getToday()
+
+  // 🔥 buang backdate dari query (karena sudah di URL)
+  const { backdate, ...rest } = params
+
+  const res = await axios.delete(
+    `${BASE_URL}/bedahcounter/${date}`,
+    {
+      params: {
+        ...(type && { type }),
+        ...rest
+      }
+    }
+  )
+
+  return res.data // ⬅️ ini langsung array
+}
+
+export const deleteDraft = async(params: {}) => {
+  return deleteBedahCounter("delete_draft", {
+    ...params
+  })
+}

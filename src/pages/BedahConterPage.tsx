@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { fetchCategory, fetchHistory, fetchOrnal, fetchSales, fetchStokBedahCounter } from "../api/bedah_counter"
+import { fetchCategory, fetchDraft, fetchHistory, fetchOrnal, fetchSales, fetchStokBedahCounter } from "../api/bedah_counter"
 import OrnalTable from "../components/organisms/OrnalTable"
 import CategoryTable from "../components/organisms/CategoryTable"
 import Navbar from "../components/organisms/NavBar"
@@ -10,13 +10,14 @@ import StokTableBedahCounter from "../components/organisms/StokTableBedahCounter
 import ArtikelFilterGroup from "../components/organisms/ArtikelFilterGroup"
 import Button from "../components/atoms/Button"
 import ReturModal from "../components/organisms/ReturModal"
-import { fetchGudang, fetchMutasi } from "../api/retur_mutasi"
+import { fetchDraftOB, fetchGudang, fetchMutasi, postDraft } from "../api/retur_mutasi"
 import MutasiModal from "../components/organisms/MutasiModal"
 import OrderBookingModal from "../components/organisms/OrderBookingModal"
 import { fetcDetailArtikel } from "../api/bedah_artikel"
 import DetailTable from "../components/organisms/DetailTableArtikel"
 import RasioCard from "../components/organisms/RasioCard"
 import GudangTable from "../components/organisms/GudangTable"
+import DraftSection from "../components/organisms/DraftSection"
 
 export default function BedahCounterPage() {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -42,7 +43,7 @@ export default function BedahCounterPage() {
     const [selectedRow, setSelectedRow] = useState<any>(null)
     const [openMutasiIn, setOpenMutasiIn] = useState(false)
     const [selectedMutasiRow, setSelectedMutasiRow] = useState<any>(null)
-    const [draftMutasiIn, setDraftMutasiIn] = useState<any[]>([])
+    const [listDraftMutasiIn, setListDraftMutasiIn] = useState<any[]>([])
     const tokoFull  = searchParams.get("toko") || ""
     const toko = tokoFull.split(" - ")[0]
     const end = searchParams.get("end") || ""
@@ -57,6 +58,10 @@ export default function BedahCounterPage() {
     const [gudangHtml,setGudangHtml] = useState("")
     const [selectedGudangRows,setSelectedGudangRows] = useState<number[]>([])
     const [gudangData, setGudangData] = useState<any[]>([])
+    const [draftRetur, setDraftRetur] = useState<any[]>([])
+    const [draftMutasiIn, setDraftMutasiIn] = useState<any[]>([])
+    const [draftMutasiOut, setDraftMutasiOut] = useState<any[]>([])
+    const [draftOrder,setDraftOrder] = useState<any[]>([])
 
     const topSizes = [
         "S",
@@ -95,11 +100,11 @@ export default function BedahCounterPage() {
         loadData()
         if (selectedHistory?.fv_catname) {
             setCategory({
-            label: selectedHistory.fv_catname,
-            value: selectedHistory.fv_catname,
+                label: selectedHistory.fv_catname,
+                value: selectedHistory.fv_catname,
             })
         }
-        
+        loadDataDraft()
     }, [selectedHistory])
 
     useEffect(() => {
@@ -134,15 +139,15 @@ export default function BedahCounterPage() {
             }
 
             if (selectedDivisi) {
-            newParams.divisi = selectedDivisi
+                newParams.divisi = selectedDivisi
             } else {
-            delete newParams.divisi
+                delete newParams.divisi
             }
 
             if (selectedOrnal) {
-            newParams.ornal = selectedOrnal
+                newParams.ornal = selectedOrnal
             } else {
-            delete newParams.ornal
+                delete newParams.ornal
             }
 
             // update url tanpa hilangkan query lama
@@ -218,6 +223,33 @@ export default function BedahCounterPage() {
         }
     }
 
+    const loadDataDraft = async ()=> {
+        const res = await fetchDraft({
+            toko,
+            start,
+            end,
+            divisi: selectedDivisi,
+            ornal: selectedOrnal,
+            backdate,
+            subid,
+        })
+
+        setDraftRetur(res.RT)
+        setDraftMutasiIn(res.Mi)
+        setDraftMutasiOut(res.MO)
+
+        const resOrder = await fetchDraftOB({
+            toko,
+            start,
+            end,
+            divisi: selectedDivisi,
+            ornal: selectedOrnal,
+            backdate,
+            subid,
+        })
+        setDraftOrder(resOrder)
+    }
+
     const handleSelectHistory = async (row: any) => {
         // VALIDASI wajib pilih divisi + ornal
         if (!selectedDivisi || !selectedOrnal) {
@@ -275,7 +307,7 @@ export default function BedahCounterPage() {
             payload
         )
 
-        setDraftMutasiIn(
+        setListDraftMutasiIn(
             res.data || []
         )
         setOpenMutasiIn(true)
@@ -317,7 +349,7 @@ export default function BedahCounterPage() {
                 payload
             )
 
-            setDraftMutasiIn(
+            setListDraftMutasiIn(
                 res.data || []
             )
 
@@ -354,8 +386,10 @@ export default function BedahCounterPage() {
 
             if (row.fv_configname === 'TOP') {
                 setOrderBookingDetail( res.top || [])
-            } else {
+            } else if (row.fv_configname === 'BOTTOM') {
                 setOrderBookingDetail( res.bot || [])
+            } else {
+                setOrderBookingDetail([])
             }
             
             //Stok di Gudang
@@ -435,6 +469,160 @@ export default function BedahCounterPage() {
 
         setRasioData(result)
     }
+
+    const handleRasioChange = (
+        size: string,
+        value: number
+    ) => {
+
+        setRasioData((prev: any) => {
+
+            if (!prev) return prev
+
+            return {
+                ...prev,
+                items: prev.items.map(
+                    (item: any) => {
+
+                        if (
+                            item.size !== size
+                        ) {
+                            return item
+                        }
+
+                        return {
+                            ...item,
+                            value,
+                        }
+                    }
+                )
+            }
+        })
+    }
+
+    const handleConfirmRetur = async (payload: any) => {
+        try {
+            const filteredSizes: Record<string, number> = {}
+
+            allSizes.forEach((size) => {
+
+                const value = Number(
+                    payload[size] || 0
+                )
+
+                // hanya qty > 0
+                if (value > 0) {
+                    filteredSizes[size] =
+                    value
+                }
+            })
+
+            const finalPayload = {
+                toko,
+                start,
+                end,
+                backdate,
+                subid,
+
+                type_draft: "RT",
+
+                data: [
+                        {
+                        artikel:
+                            selectedRow
+                            ?.fv_barcode,
+
+                        gudang: "",
+
+                        sizes: filteredSizes,
+                        },
+                    ],
+                browser: navigator.userAgent,
+            }
+
+            console.log(finalPayload)
+            const res = await postDraft(finalPayload)
+
+            console.log(res)
+
+            await loadDataDraft()
+            setOpenRetur(false)
+        } catch (error) {
+            console.log(error)
+            alert(
+                "Gagal submit retur"
+            )
+        }
+    }
+
+    const handleConfirmMutasi = async(type: "MI" | "MO",payload: any[])=> {
+        try {
+            const selectedData = payload
+                .filter((item) => item.checked)
+                .map((item) => {
+
+                    const filteredSizes:
+                    Record<string, number> = {}
+
+                    allSizes.forEach((size) => {
+
+                    const value = Number(
+                        item.sizes?.[size] || 0
+                    )
+
+                    if (value > 0) {
+                        filteredSizes[size] =
+                        value
+                    }
+                    })
+
+                    return {
+                        artikel: item.artikel,
+                        gudang: item.gudang,
+                        sizes: filteredSizes,
+                    }
+                })
+                .filter(
+                    (item) =>
+                    Object.keys(item.sizes)
+                        .length > 0
+                )
+
+                if (selectedData.length === 0) {
+                    alert(
+                        "Silakan pilih minimal satu artikel"
+                    )
+                    return
+                }
+
+                const finalPayload = {
+                    toko: tokoFull,
+                    backdate,
+                    start,
+                    end,
+                    subid,
+                    type_draft: type,
+                    data: selectedData,
+                    keterangan:'',
+                    browser: navigator.userAgent,
+                }
+
+                console.log(
+                "Payload:",
+                finalPayload
+                )
+
+                await postDraft(finalPayload)
+
+                await loadDataDraft()
+                setOpenMutasiIn(false)
+        } catch (error) {
+            console.log(error)
+            alert(
+                "Gagal submit Mutasi"
+            )
+        }
+    }
     
     return(
         <div className="space-y-6 p-4">
@@ -512,7 +700,18 @@ export default function BedahCounterPage() {
                                 onChangeArtikel={setArtikel}
                             />
                             <Button onClick={handleMutasiIn}>Mutasi In</Button>
-                            <Button variant="danger" onClick={handleMutasiIn}>Order Booking</Button>
+                            <Button variant="danger" 
+                            onClick={() => {
+                                if (!artikel?.value) {
+                                    alert("Pilih artikel dulu")
+                                    return
+                                }
+
+                                handleOrderBooking({
+                                    fv_barcode: artikel.value,
+                                })
+                            }}
+                            >Order Booking</Button>
                         </div>
                         
                         <StokTableBedahCounter
@@ -530,14 +729,49 @@ export default function BedahCounterPage() {
                             }
                         />
 
+                        {draftRetur?.length > 0 && (
+                            <DraftSection
+                                type="retur"
+                                data={draftRetur}
+                                subid={subid}
+                                onReload={loadDataDraft}
+                            />
+                        )}
+
+                        {draftMutasiIn?.length > 0 && (
+                            <DraftSection
+                                type="in"
+                                data={draftMutasiIn}
+                                subid={subid}
+                                onReload={loadDataDraft}
+                            />
+                        )}
+
+                        {draftMutasiOut?.length > 0 && (
+                            <DraftSection
+                                type="out"
+                                data={draftMutasiOut}
+                                subid={subid}
+                                onReload={loadDataDraft}
+                            />
+                        )}
+
+                        {draftOrder?.length > 0 && (
+                            <DraftSection
+                                type="order"
+                                data={draftOrder}
+                                subid={subid}
+                                onReload={loadDataDraft}
+                            />
+                        )}
+
                         <ReturModal
                         open={openRetur}
                         row={selectedRow}
                         onClose={() => setOpenRetur(false)}
                         onConfirm={(payload) => {
                             console.log(payload)
-
-                            setOpenRetur(false)
+                            handleConfirmRetur(payload)
                         }}
                         />
 
@@ -548,9 +782,12 @@ export default function BedahCounterPage() {
                             setOpenMutasiIn(false)
                         }
                         selectedRow={selectedMutasiRow}
-                        draftData={draftMutasiIn}
-                        onConfirm={() => {
-                            console.log("confirm")
+                        draftData={listDraftMutasiIn}
+                        onConfirm={(payload) => {
+                            handleConfirmMutasi(mutasiType === "in"
+                                ? "MI"
+                                : "MO",payload
+                            )
                         }}
                         />
 
@@ -594,6 +831,9 @@ export default function BedahCounterPage() {
 
                                     <RasioCard
                                         data={rasioData}
+                                        onChangeValue={
+                                            handleRasioChange
+                                        }
                                     />
                                     </div>
 

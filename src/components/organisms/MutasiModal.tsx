@@ -7,7 +7,7 @@ type Props = {
   onClose: () => void
   selectedRow: any
   draftData: any[]
-  onConfirm: () => void
+  onConfirm: (payload: any) => void
   type: "in" | "out"
 }
 
@@ -507,10 +507,90 @@ export default function MutasiModal({
           </Button>
 
           <Button
-            onClick={onConfirm}
-          >
+            onClick={() => {
+
+                const payload =
+                    type === "in"
+                    ? editedDraft.map(
+                        (
+                            item,
+                            index
+                        ) => ({
+                            checked:
+                                checkedDrafts.includes(
+                                    index
+                                ),
+
+                            artikel:
+                                item[2],
+
+                            gudang:
+                                item[1],
+
+                            sizes:
+                                sizeFields.reduce(
+                                    (
+                                        acc,
+                                        size,
+                                        idx
+                                    ) => {
+
+                                        acc[size] =
+                                            Number(
+                                                item[
+                                                    idx + 6
+                                                ] || 0
+                                            )
+
+                                        return acc
+                                    },
+                                    {} as Record<
+                                        string,
+                                        number
+                                    >
+                                ),
+                        })
+                    )
+                    : [
+                        {
+                            checked:
+                                selectedDraft !== null,
+
+                            artikel:
+                                selectedRow?.fv_barcode,
+
+                            gudang:
+                                editedDraft[selectedDraft as number]?.[1],
+
+                            sizes:
+                                sizeFields.reduce(
+                                    (
+                                        acc,
+                                        size
+                                    ) => {
+
+                                        acc[size] =
+                                            Number(
+                                                editedSelectedRow?.[
+                                                    size
+                                                ] || 0
+                                            )
+
+                                        return acc
+                                    },
+                                    {} as Record<
+                                        string,
+                                        number
+                                    >
+                                ),
+                        },
+                    ]
+
+                onConfirm(payload)
+            }}
+        >
             Konfirmasi
-          </Button>
+        </Button>
         </div>
       </div>
     </Modal>
