@@ -3,21 +3,22 @@ import { fetchCategory, fetchDraft, fetchHistory, fetchOrnal, fetchSales, fetchS
 import OrnalTable from "../components/organisms/OrnalTable"
 import CategoryTable from "../components/organisms/CategoryTable"
 import Navbar from "../components/organisms/NavBar"
-import { useSearchParams } from "react-router-dom"
+import { data, useSearchParams } from "react-router-dom"
 import SalesTable from "../components/organisms/SalesTable"
 import HistoryTable from "../components/organisms/HistoryTable"
 import StokTableBedahCounter from "../components/organisms/StokTableBedahCounter"
 import ArtikelFilterGroup from "../components/organisms/ArtikelFilterGroup"
 import Button from "../components/atoms/Button"
 import ReturModal from "../components/organisms/ReturModal"
-import { fetchDraftOB, fetchGudang, fetchMutasi, postDraft } from "../api/retur_mutasi"
+import { fetchDraftOB, fetchGudang, fetchMutasi, postDraft, postMutasi, postOrderBooking, postRetur } from "../api/retur_mutasi"
 import MutasiModal from "../components/organisms/MutasiModal"
 import OrderBookingModal from "../components/organisms/OrderBookingModal"
-import { fetcDetailArtikel } from "../api/bedah_artikel"
+import { fetcDetailArtikel, postDraftOB } from "../api/bedah_artikel"
 import DetailTable from "../components/organisms/DetailTableArtikel"
 import RasioCard from "../components/organisms/RasioCard"
 import GudangTable from "../components/organisms/GudangTable"
 import DraftSection from "../components/organisms/DraftSection"
+import { getLocalIP, getPublicIP } from "../api/ip"
 
 export default function BedahCounterPage() {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -62,6 +63,11 @@ export default function BedahCounterPage() {
     const [draftMutasiIn, setDraftMutasiIn] = useState<any[]>([])
     const [draftMutasiOut, setDraftMutasiOut] = useState<any[]>([])
     const [draftOrder,setDraftOrder] = useState<any[]>([])
+    const [keteranganRetur, setKeteranganRetur] = useState("")
+    const [keteranganIn, setKeteranganIn] = useState("")
+    const [keteranganOut, setKeteranganOut] = useState("")
+    const [keteranganOrder, setKeteranganOrder] = useState("")
+    const [tanggalOnStore, setTanggalOnStore] = useState("")
 
     const topSizes = [
         "S",
@@ -623,6 +629,172 @@ export default function BedahCounterPage() {
             )
         }
     }
+
+    const handleConfirmOrderBooking = async () => {
+        try {
+            const artikel = selectedOrderRow?.fv_barcode
+            const selectedIndex = selectedGudangRows?.[0]
+            const selectedGudang = gudangData?.[selectedIndex]
+            const gudang = selectedGudang?.fv_whtypename
+            const toko = selectedOrderRow?.fv_toko
+            console.log(rasioData?.items)
+
+            if (!artikel || !gudang) {
+                alert(
+                    "Artikel atau Gudang tidak ditemukan!"
+                )
+                return
+            }
+
+            // ambil size dari rasio
+            const sizes:
+            Record<string, number> = {}
+
+            rasioData?.items?.forEach(
+                (item: any) => {
+
+                const value = Number(
+                    item.value || 0
+                )
+
+                if (value > 0) {
+                    sizes[item.size] = value
+                }
+            })
+
+            if (
+                Object.keys(sizes).length === 0
+            ) {
+                alert(
+                    "Isi minimal satu size!"
+                )
+                return
+            }
+
+            const payload = {
+                subid,
+                data: [
+                    {
+                        toko,
+                        sizes,
+                    },
+                ],
+                gudang,
+                artikel,
+                tgl: new Date().toISOString(),
+                type_draft: "OB",
+            }
+
+            console.log(
+                "Payload:",
+                payload
+            )
+
+            await postDraftOB(payload)
+            await loadDataDraft
+            setOpenOrderBooking(false)
+        } catch (error) {
+            console.error(error)
+            alert("Gagal menyimpan data!")
+        }
+    }
+
+    const handleSubmitAllDraft = async() => {
+        try {
+            const totalRetur = draftRetur?.length || 0
+            const totalIn = draftMutasiIn?.length || 0
+            const totalOut = draftMutasiOut?.length || 0
+            const totalOrder = draftOrder?.length || 0
+
+            if (totalRetur + totalIn + totalOut + totalOrder === 0) {
+                alert('Tidak ada data yang akan dikirim');
+                return;
+            }
+
+            // ❗ VALIDASI TANDA BACA
+            const forbidden = /[.,!?;:'"(){}\[\]\\\/\-_=+@#$%^&*<>|`~]/;
+
+            if (
+                forbidden.test(keteranganRetur) || 
+                forbidden.test(keteranganIn) || 
+                forbidden.test(keteranganOut) ||
+                forbidden.test(keteranganOrder)
+            ) {
+                alert("Tidak bisa disimpan! Keterangan tidak boleh mengandung tanda baca.");
+                return
+            }
+
+            const promises = []
+            const now = new Date().toISOString()
+            const ip_public = await getPublicIP()
+            const ip_local = await getLocalIP()
+
+            if(totalRetur > 0) {
+                const payloadRetur = {
+                    toko,
+                    keterangan: keteranganRetur,
+                    subid,
+                    tglRetur: now,
+                    data: draftRetur
+                }
+                promises.push(postRetur(payloadRetur))
+            }
+            
+            if(totalIn > 0) {
+                const payloadIn = {
+                    toko,
+                    keterangan: keteranganIn,
+                    subid,
+                    backdate: now,
+                    type_draft: "mt_in",
+                    data: draftMutasiIn
+                }
+                promises.push(postMutasi(payloadIn))
+            }
+
+            if(totalOut > 0) {
+                const payloadOut = {
+                    toko,
+                    keterangan: keteranganOut,
+                    subid,
+                    backdate: now,
+                    type_draft: "mt_out",
+                    data: draftMutasiOut
+                }
+                promises.push(postMutasi(payloadOut))
+            }
+
+            if(totalOrder > 0) {
+                const payloadOrder = {
+                    toko,
+                    keterangan: keteranganOrder,
+                    subid,
+                    backdate: tanggalOnStore,
+                    data: draftOrder,
+                    browser: navigator.userAgent,
+                    ip_public,
+                    ip_local,
+                }
+                promises.push(postOrderBooking(payloadOrder))
+            }
+
+            await Promise.all(promises)
+
+            alert("Berhasil kirim semua data!")
+
+            await loadDataDraft()
+
+            setKeteranganRetur("")
+            setKeteranganIn("")
+            setKeteranganOut("")
+            setKeteranganOrder("")
+            setTanggalOnStore("")
+
+        } catch (error) {
+            console.error(error)
+            alert("Terjadi kesalahan saat mengirim data")
+        }
+    }
     
     return(
         <div className="space-y-6 p-4">
@@ -735,6 +907,10 @@ export default function BedahCounterPage() {
                                 data={draftRetur}
                                 subid={subid}
                                 onReload={loadDataDraft}
+                                keterangan={keteranganRetur}
+                                onChangeKeterangan={
+                                    setKeteranganRetur
+                                }
                             />
                         )}
 
@@ -744,6 +920,10 @@ export default function BedahCounterPage() {
                                 data={draftMutasiIn}
                                 subid={subid}
                                 onReload={loadDataDraft}
+                                keterangan={keteranganIn}
+                                onChangeKeterangan={
+                                    setKeteranganIn
+                                }
                             />
                         )}
 
@@ -753,6 +933,10 @@ export default function BedahCounterPage() {
                                 data={draftMutasiOut}
                                 subid={subid}
                                 onReload={loadDataDraft}
+                                keterangan={keteranganOut}
+                                onChangeKeterangan={
+                                    setKeteranganOut
+                                }
                             />
                         )}
 
@@ -762,8 +946,22 @@ export default function BedahCounterPage() {
                                 data={draftOrder}
                                 subid={subid}
                                 onReload={loadDataDraft}
+                                keterangan={keteranganOrder}
+                                onChangeKeterangan={
+                                    setKeteranganOrder
+                                }
+                                tanggalOnStore={
+                                    tanggalOnStore
+                                }
+                                onChangeTanggal={
+                                    setTanggalOnStore
+                                }
                             />
                         )}
+
+                        <div className="text-center mt-4 mb-4">
+                            <Button onClick={handleSubmitAllDraft}>Kirim Semua Data Draft</Button>
+                        </div>
 
                         <ReturModal
                         open={openRetur}
@@ -805,7 +1003,8 @@ export default function BedahCounterPage() {
                             toko={selectedOrderRow?.fv_toko}
                             gudang={selectedOrderRow?.gudang}
                             onSaveDraft={() => {
-                                console.log("save draft")
+                                console.log('test')
+                                handleConfirmOrderBooking()
                             }}
                             >
                                 <div className="space-y-6">

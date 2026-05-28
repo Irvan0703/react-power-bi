@@ -80,3 +80,15 @@ export const postSessionOrder = async (params : {}) => {
 export const postDraft = async (params: {}) => {
   return postReturMutasi("draft_mutasi_in", params)
 }
+
+export const postRetur = async(params: {}) => {
+  return postReturMutasi("retur", params)
+}
+
+export const postMutasi = async(params: {}) => {
+  return postReturMutasi("mutasi", params)
+}
+
+export const postOrderBooking = async(params: {}) => {
+  return postReturMutasi("order_booking", params)
+}

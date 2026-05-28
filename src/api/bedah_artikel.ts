@@ -43,3 +43,30 @@ export const fetcDetailArtikel = async(params : {}) => {
         ...params
     })
 }
+
+
+const postBedahArtikel = async (
+  type: string,
+  params: any = {}
+) => {
+  const date = params.backdate || getToday()
+
+  // 🔥 buang backdate dari query (karena sudah di URL)
+  const { backdate, ...rest } = params
+
+  const payload = {
+    ...(type && { type }),
+    ...rest,
+  }
+
+  const res = await axios.post(
+    `${BASE_URL}/bedahartikel/${date}`,
+    payload
+  )
+
+  return res.data // ⬅️ ini langsung array
+}
+
+export const postDraftOB = async (params: {}) => {
+  return postBedahArtikel("ob_art", params)
+}

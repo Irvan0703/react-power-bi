@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import DraftContainer from "./DraftContainer"
 import { deleteDraft } from "../../api/bedah_counter"
 
@@ -13,10 +13,18 @@ const sizeColumns = [
 ]
 
 type Props = {
-  type: "retur" | "in" | "out" | "order"
-  data: any[]
-  subid: string
-  onReload: () => Promise<void>
+    type: "retur" | "in" | "out" | "order"
+    data: any[]
+    subid: string
+    onReload: () => Promise<void>
+    keterangan: string
+    onChangeKeterangan: (
+        value: string
+    ) => void
+    tanggalOnStore?: string
+    onChangeTanggal?: (
+        value: string
+    ) => void
 }
 
 export default function DraftSection({
@@ -24,11 +32,12 @@ export default function DraftSection({
   data,
   subid,
   onReload,
+  keterangan,
+  onChangeKeterangan,
+  tanggalOnStore,
+  onChangeTanggal,
 }: Props) {
 
-  const [ keterangan, setKeterangan] = useState("")
-
-  const [tanggalOnStore, setTanggalOnStore] = useState("")
 
   /* =========================
      SUMMARY
@@ -150,11 +159,11 @@ export default function DraftSection({
         tanggalOnStore
       }
       onChangeTanggal={
-        setTanggalOnStore
+        onChangeTanggal
       }
       keterangan={keterangan}
       onChangeKeterangan={
-        setKeterangan
+        onChangeKeterangan
       }
       detailContent={
         type === "retur" ? (
