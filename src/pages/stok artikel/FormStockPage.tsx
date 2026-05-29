@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
-import StockForm from "../components/organisms/StockForm"
-import { fetchToko } from "../api/stok_dasboard"
+import { fetchToko } from "../../api/stok_dasboard";
+import StockForm from "../../components/organisms/StockForm";
 
 type Option = { label: string; value: string }
 

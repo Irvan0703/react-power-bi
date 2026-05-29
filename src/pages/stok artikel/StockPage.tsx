@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo } from "react";
-import { fetchStok, fetchSumCategory } from "../api/stok_dasboard";
-import StoreHeader from "../components/molecules/StoreHeader";
-import StatsContainer from "../components/molecules/StatsContainer";
-import ProductTable from "../components/organisms/ProductTable";
-import SummaryTable from "../components/organisms/SummaryTable";
+import { fetchStok, fetchSumCategory } from "../../api/stok_dasboard";
+import StoreHeader from "../../components/molecules/StoreHeader";
+import StatsContainer from "../../components/molecules/StatsContainer";
+import ProductTable from "../../components/organisms/ProductTable";
+import SummaryTable from "../../components/organisms/SummaryTable";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 export default function StockPage() {

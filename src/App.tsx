@@ -1,10 +1,11 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom"
-import FormStockPage from "./pages/FormStockPage"
 import "bootstrap/dist/css/bootstrap.min.css"
-import StockPage from "./pages/StockPage"
-import FormBedahCounterPage from "./pages/FormBedahCounter"
-import BedahCounterPage from "./pages/BedahConterPage"
+import FormBedahCounterPage from "./pages/bedah counter/FormBedahCounter"
+import BedahCounterPage from "./pages/bedah counter/BedahConterPage"
 import Test from "./pages/size"
+import SummaryBedahCounter from "./pages/bedah counter/SummaryBedahCounter"
+import FormStockPage from "./pages/stok artikel/FormStockPage"
+import StockPage from "./pages/stok artikel/StockPage"
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
 
         <Route path="/bedah-counter" element={<FormBedahCounterPage/>}/>
         <Route path="/bedah-counter/action" element={<BedahCounterPage/>}/>
+        <Route path="/report/summary-bedah-counter" element={<SummaryBedahCounter/>}/>
       </Routes>
     </BrowserRouter>
   

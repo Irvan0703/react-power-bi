@@ -96,6 +96,24 @@ export default function BedahCounterForm ({ tokoOptions }: Props) {
       setDate(today)
     }, [])
 
+    const summaryReport = () => {
+      if (!subid) return
+
+      if (selectedToko.length === 0) {
+        alert("Pilih toko dulu")
+        return
+      }
+      const params = new URLSearchParams({
+          subid: subid,
+          toko: selectedToko.join(","),
+          backdate: date?.toISOString().slice(0, 10) || "",
+          start: salesStart?.toISOString().slice(0, 10) || "",
+          end: salesEnd?.toISOString().slice(0, 10) || "",
+        })
+
+      navigate(`/report/summary-bedah-counter?${params.toString()}`)
+    }
+
     return (
         <div className="card p-4">
           <h3 className="text-center">Form Bedah Counter</h3>
@@ -126,6 +144,8 @@ export default function BedahCounterForm ({ tokoOptions }: Props) {
           <DatePickerField value={salesEnd} onChange={setSalesEnd} />
     
           <Button onClick={handleSubmit}>Bedah Counter</Button>
+
+          <Button onClick={summaryReport}>Summary Bedah Counter</Button>
           </div>
       )
 }

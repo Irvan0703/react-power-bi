@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
-import { fetchToko } from "../api/stok_dasboard"
-import BedahCounterForm from "../components/organisms/BedahCounterForm";
-import Button from "../components/atoms/Button";
+import { fetchToko } from "../../api/stok_dasboard"
+import BedahCounterForm from "../../components/organisms/BedahCounterForm";
+import Button from "../../components/atoms/Button";
 
 type Option = { label: string; value: string }
 
@@ -35,7 +35,6 @@ export default function FormBedahCounterPage() {
   return (
     <div className="container mt-5">
       <BedahCounterForm tokoOptions={tokoOptions} />
-      <Button>Summary Bedah Counter</Button>
       <Button>Repeat Order</Button>
       <Button>Import Table</Button>
     </div>
